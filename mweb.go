@@ -1,9 +1,8 @@
 // mweb is a program to demo multicast.
 // Run it multiple times on different machines/containers and each
 // instance will learn about the others through multicast.
-// Hit it via http on port 8080 and it will return a list of instances.
+// It will log to stdout every second the list of peers that it's seen.
 // Flag --iface makes it use (and wait for) a particular interface (e.g. ethwe)
-// Flag -p makes it listen on a different http port
 package main
 
 import (
@@ -14,7 +13,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -41,22 +39,24 @@ type Peer struct {
 var allPeers map[int]*Peer = make(map[int]*Peer)
 var peersLock sync.Mutex
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func printStatus() {
 	peersLock.Lock()
 	defer peersLock.Unlock()
+	fmt.Printf("\n==========================================\n")
+	fmt.Printf("           HERE ARE MY FRIENDS")
+	fmt.Printf("\n==========================================\n")
 	for _, p := range allPeers {
-		fmt.Fprintf(w, "%s %s\n", p.info.Name, p.addr)
+		fmt.Printf("     - %s %s\n", p.info.Name, p.addr)
 	}
+	fmt.Printf("==========================================\n")
 }
 
 func main() {
 	var (
 		ifaceName string
-		httpPort  int
 		err       error
 	)
 	flag.StringVar(&ifaceName, "iface", "", "name of interface for multicasting")
-	flag.IntVar(&httpPort, "p", 8080, "port to listen for http")
 	flag.Parse()
 	var iface *net.Interface = nil
 	if ifaceName != "" {
@@ -88,19 +88,14 @@ func main() {
 	}
 
 	ticker := time.NewTicker(time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				sendInfo(myID, sendconn)
-				expirePeers()
-			}
+	for {
+		select {
+		case <-ticker.C:
+			sendInfo(myID, sendconn)
+			expirePeers()
+			printStatus()
 		}
-	}()
-
-	http.HandleFunc("/", handler)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", httpPort), nil)
-	log.Fatal(err)
+	}
 }
 
 func sendInfo(id int, conn *net.UDPConn) {
