@@ -1,5 +1,1 @@
-FROM ubuntu
-WORKDIR /home
-ADD ./mballs /home/
-CMD []
-ENTRYPOINT ["/home/mballs", "-iface", "ethwe"]
+FROM golang:1.6-onbuild
