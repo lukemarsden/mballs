@@ -10,10 +10,10 @@ package main
 
 import (
 	"bytes"
-	gc "code.google.com/p/goncurses"
 	"encoding/gob"
 	"flag"
 	"fmt"
+	gc "github.com/rthornton128/goncurses"
 	"log"
 	"math/rand"
 	"net"
